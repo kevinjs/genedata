@@ -1,2 +1,27 @@
 files:
-ncbi
+>filelist20130419.lst
+>ncbirdins2.py
+>ncbiupdate.py
+>README
+>run.sh
+>update20130509.lst
+>update.sh
+>updtaxonid.py
+
+usage:
+1.Insert basis file
+python ncbirdins.py -a host:port -i srcfile
+
+2.Update daily-nc file
+python ncbiupdate.py -a host:port -i srcfile
+
+3.Update taxon_id
+python updtaxonid.py
+
+basis shell usage:
+1.prepare file.lst first.
+2. ./run.sh file.lst
+
+update shell usage:
+1.prepare update.lst first.
+2. ./update.sh update.lst
