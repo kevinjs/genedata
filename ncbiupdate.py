@@ -142,6 +142,10 @@ def read_features():
     feature = []
     genes = []
     
+    #add by jingshao 0514
+    products = []
+    notes = []
+    
     current_line = f.readline()
     l_num = l_num + 1
     
@@ -163,7 +167,15 @@ def read_features():
             if genes.count(tmp_ft['key_table']['gene']) == 0:
                 genes.append(tmp_ft['key_table']['gene'])
             
-    return [feature, genes]
+        #add by jingshao 0514    
+        if tmp_ft['key_table'].has_key('product'):
+            if products.count(tmp_ft['key_table']['product']) == 0:
+                products.append(tmp_ft['key_table']['product'])
+        if tmp_ft['key_table'].has_key('note'):
+            if notes.count(tmp_ft['key_table']['note']) == 0:
+                notes.append(tmp_ft['key_table']['note'])
+            
+    return [feature, genes, products, notes]
 
 '''
 Read feature table in FEATURES
@@ -278,7 +290,7 @@ def check_exist(accession, col_query, col_updatelog, upfile):
     else:
         for tmp_in in ins:
             col_updatelog.insert({'old_id': tmp_in['_id'], 'ACCESSION': tmp_in['ACCESSION'], 'ctime': timeStr, 'file': upfile})
-            #print str(tmp_in['_id']) + ', ' + tmp_in['ACCESSION'] + ', ' + timeStr
+#            print str(tmp_in['_id']) + ', ' + tmp_in['ACCESSION'] + ', ' + timeStr
         return False
 
 def read_update(filename):
@@ -317,10 +329,12 @@ def read_update(filename):
         f = open(filename, 'r')
         
     try:
+        id_table = col_idtable.find_one({'_id':'meta'})
+        col_files.insert({'_id':filename, 'type':'daily-nc', 'current': 0, 'status':'insert', 'start_id':(id_table['current_id']+1)})
+        
         current_line = f.readline()
         while current_line:
             if l_num >= 0:
-                col_files.insert({'_id':filename, 'type':'daily-nc', 'current': 0, 'status':'insert'})
                 
                 if current_line.startswith('LOCUS'):
                     r_num = r_num + 1
@@ -390,9 +404,14 @@ def read_update(filename):
                 if current_line.startswith('COMMENT'):
                     meta['COMMENT'] = read_multilines('COMMENT')
                 if current_line.startswith('FEATURES'):
-                    [features, genes] = read_features()
+                    #add by jingshao 0514
+                    [features, genes, products, notes] = read_features()
                     meta['FEATURES'] = features
                     query['GENE'] = genes
+                    
+                    #add by jingshao 0514
+                    query['PRODUCT'] = products
+                    query['NOTE'] = notes
                     continue
                 if current_line.startswith('BASE COUNT'):
                     meta['BASE COUNT'] = read_multilines('BASE COUNT')
@@ -453,11 +472,11 @@ def read_update(filename):
         print current_line
         errinfo = sys.exc_info()
         print errinfo
-	timeStr = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-        col_files.update({'_id':filename}, {'_id':filename, 'type':'daily-nc', 'current': r_num, 'status':'failed', 'ctime': timeStr})
+        id_table = col_idtable.find_one({'_id':'meta'})
+        col_files.update({'_id':filename}, {'$set':{'current': r_num, 'status':'failed', 'end_id':id_table['current_id']}})
         
-    timeStr = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-    col_files.update({'_id':filename}, {'_id':filename, 'type':'daily-nc', 'current': r_num, 'status':'succeed', 'ctime': timeStr})
+    id_table = col_idtable.find_one({'_id':'meta'})
+    col_files.update({'_id':filename}, {'$set':{'current': r_num, 'status':'succeed', 'end_id':id_table['current_id']}})
         
     f.close()
     
