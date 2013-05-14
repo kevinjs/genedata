@@ -21,6 +21,7 @@ def location_proc2(location):
     location = location.replace('complement(', '')
     location = location.replace('join(', '')
     location = location.replace('order(', '')
+    location = location.replace('(', '')
     location = location.replace(')', '')
     location = location.replace('<', '')
     location = location.replace('>', '')
@@ -31,11 +32,11 @@ def location_proc2(location):
         #reference
         if tmp.find(':') == -1:
             if tmp.find('..') == -1:
-                st.append(int(tmp))
-                ed.append(int(tmp))
+                st.append(float(int(tmp)))
+                ed.append(float(int(tmp)))
             else:
-                st.append(int(tmp.split('..')[0]))
-                ed.append(int(tmp.split('..')[1]))
+                st.append(int(float(tmp.split('..')[0])))
+                ed.append(int(float(tmp.split('..')[1])))
                 
     if len(st) == len(ed):
         return [st, ed]
@@ -49,10 +50,12 @@ def read_log(filename):
     db_ncbi_data = conn_mongo[mongo_db]
     col_meta = db_ncbi_data['meta']
     col_features = db_ncbi_data['features']
+    cur_line = ''
     
     try:
         c = 0
         for line in fileinput.input(filename):
+            cur_line = line
 #            print line
             tmp1 = line.split('gene.gene')
             op = tmp1[0].split(',')[0].strip()
@@ -82,7 +85,7 @@ def read_log(filename):
             if c % 1000 == 0:
                 print c
     except Exception, e:
-
+        print cur_line
         print e
         traceback.print_exc()
     finally:
@@ -98,6 +101,7 @@ if __name__ == '__main__':
     conn_mongo = pymongo.Connection('192.168.40.83', 29025)
     
     read_log(filename)
+    
     
     end_ms = datetime.datetime.now()
     print 'cost: ' + str((end_ms - start_ms).seconds) + ' s'
