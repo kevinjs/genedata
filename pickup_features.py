@@ -20,42 +20,55 @@ def appendFile(content, filename):
         output.write(content)
         output.close()
 
-def location_proc2(location):
-    global nums_p
-    
-    location = location.replace('complement(', '')
-    location = location.replace('join(', '')
-    location = location.replace(')', '')
-    location = location.replace('<', '')
-    location = location.replace('>', '')
-    
-    if location.find(',') == -1:
-        se = location.split('..')
-    
-        if len(se) == 2 and se[0].isdigit() and se[1].isdigit():
-            return [int(se[0]), int(se[1])]
-        else:
-            return None
-    else:
-        #join
-        return [0, -1]
-        
-
-#def location_proc(location):
+#def location_proc2(location):
 #    global nums_p
 #    
 #    location = location.replace('complement(', '')
+#    location = location.replace('join(', '')
 #    location = location.replace(')', '')
 #    location = location.replace('<', '')
 #    location = location.replace('>', '')
 #    
-#    se = location.split('..')
+#    if location.find(',') == -1:
+#        se = location.split('..')
 #    
-#    if se[0].isdigit() and se[1].isdigit():
-#        return [int(se[0]), int(se[1])]
+#        if len(se) == 2 and se[0].isdigit() and se[1].isdigit():
+#            return [int(se[0]), int(se[1])]
+#        else:
+#            return None
 #    else:
-#        print se
-#        return None
+#        #join
+#        return [0, -1]
+    
+def location_proc(location):
+    
+    st = []
+    ed = []
+    
+    location = location.replace('complement(', '')
+    location = location.replace('join(', '')
+    location = location.replace('order(', '')
+    location = location.replace('(', '')
+    location = location.replace(')', '')
+    location = location.replace('<', '')
+    location = location.replace('>', '')
+    
+    tmps = location.split(',')
+    
+    for tmp in tmps:
+        #reference
+        if tmp.find(':') == -1:
+            if tmp.find('..') == -1:
+                st.append(int(tmp))
+                ed.append(int(tmp))
+            else:
+                st.append(int(tmp.split('..')[0]))
+                ed.append(int(tmp.split('..')[1]))
+                
+    if len(st) == len(ed):
+        return [st, ed]
+    else:
+        return None
     
 def check_exist(col_features, meta_id, feature_key, feature_value):
     query = {}
@@ -74,6 +87,7 @@ def check_exist(col_features, meta_id, feature_key, feature_value):
 def readInstance(range_s=0, featureKey='gene', subFeatureKey='gene'):
     global conn_mongo
     global mongo_db
+    global logfile
     
     print 'Read instances ...'
     
@@ -106,12 +120,9 @@ def readInstance(range_s=0, featureKey='gene', subFeatureKey='gene'):
                 for feature_item in item['FEATURES']:
                     if feature_item['key'] == featureKey and feature_item['key_table'].has_key(subFeatureKey):
                         feature_items = {}
-                        st_ed = location_proc2(feature_item['location'])
+                        st_ed = location_proc(feature_item['location'])
                     
-                        if st_ed == None:
-#                            print item['ACCESSION'] + ', ' + featureKey+"."+subFeatureKey + '=' + feature_item['key_table'][subFeatureKey]
-                            appendFile('st_ed=None,'+item['ACCESSION'] + ',' + featureKey+"."+subFeatureKey + '=' + feature_item['key_table'][subFeatureKey]+'\n', '/home/shaojing/ncbi/pickup_gene_20130513.log')
-                        else:
+                        if st_ed != None:
                             feature_items['meta_id'] = item['_id']
                             feature_items['meta_ACCESSION'] = item['ACCESSION']
                             feature_items['feature_key'] = featureKey+"."+subFeatureKey
@@ -121,14 +132,19 @@ def readInstance(range_s=0, featureKey='gene', subFeatureKey='gene'):
                             
                             feature_items['seq_start'] = st_ed[0]
                             feature_items['seq_end'] = st_ed[1]
-                            if st_ed[0] == 0 and st_ed[1] == -1:
-                                appendFile('join,'+item['ACCESSION'] + ',' + featureKey+"."+subFeatureKey + '=' + feature_item['key_table'][subFeatureKey]+'\n', '/home/shaojing/ncbi/pickup_gene_20130513.log')
-    
-                            feature_items['seq_length'] = st_ed[1] - st_ed[0] + 1
+                            
+                            length_sum = 0
+                            for i in range(0, len(st_ed[0])):
+                                length_sum = length_sum + (st_ed[1][i] - st_ed[0][i] + 1)
+                            
+                            feature_items['seq_length'] = length_sum
                             
                             new_id = col_idtable.find_and_modify(query={'_id':'features'}, update={'$inc':{'current_id':1}}, new=True).get('current_id')
                             
                             feature_items['_id'] = new_id
+                            
+                            if st_ed[0] == 0 and st_ed[1] == -1:
+                                appendFile(str(new_id)+','+item['ACCESSION'] + ',' + kkk+'\n', logfile)
                         
                             if len(insert_array) >= 1000:
                                 insert_array.append(feature_items)
@@ -155,6 +171,7 @@ def readInstance(range_s=0, featureKey='gene', subFeatureKey='gene'):
 #                                feature_items['_id'] = check_id
 #                            
 #                                col_features.update({'_id': check_id}, feature_items)
+
                             c = c + 1
                             if c % 5000 == 0:
                                 print str(c)
@@ -176,6 +193,7 @@ if __name__ == '__main__':
     mongo_host = '192.168.40.81'
     mongo_port = 29025
     mongo_db = 'ncbi_data'
+    logfile = '/home/shaojing/ncbi/pickup_gene_20130513.log'
     
     conn_mongo = pymongo.Connection(mongo_host, mongo_port)
     
