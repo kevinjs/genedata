@@ -56,7 +56,6 @@ def get_taxonid(sci_name, par):
     id = -1
     
     try:
-#        conn = MySQLdb.connect(host='159.226.13.75', user='root', passwd='csdbphylo334', db='palpp1', port=3306)
         cur = conn_mysql.cursor()
         cur2 = conn_mysql.cursor()
         n = cur.execute('select taxon_id from taxon_name where name = "'+sci_name+'"')
@@ -86,7 +85,7 @@ if __name__ == '__main__':
     mongo_host = '192.168.40.81'
     mongo_port = 29025
     
-    conn_mysql = MySQLdb.connect(host='159.226.13.75', user='root', passwd='csdbphylo334', db='darwintree', port=3306)
+    conn_mysql = MySQLdb.connect(host='xx.xx.xx.xx', user='xxxx', passwd='xxxx', db='xxxx', port=3306)
     conn_mongo = pymongo.Connection(mongo_host, mongo_port)
     
     readInstance()

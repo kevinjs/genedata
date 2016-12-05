@@ -73,12 +73,9 @@ def read_organism():
 
 def get_taxonid(sci_name, par):
     global conn_mysql
-#    159.226.13.75
-#    root / csdbphylo334
     id = -1
     
     try:
-#        conn = MySQLdb.connect(host='159.226.13.75', user='root', passwd='csdbphylo334', db='palpp1', port=3306)
         cur = conn_mysql.cursor()
         cur2 = conn_mysql.cursor()
         n = cur.execute('select taxon_id from taxon_name where name = "'+sci_name+'"')
@@ -506,12 +503,7 @@ if __name__ == '__main__':
     l_num = 0
     e_num = 0
     
-#    srcfile = '/home/jingshao/ncbi_data/daily-nc/nc0423.flat.gz'
-#    host = '192.168.40.80'
-#    port = 29025
-#    srcfile = '/home/jingshao/ncbi_data/daily-nc/con_nc.0420.flat.gz'
-    
-    conn_mysql = MySQLdb.connect(host='159.226.13.75', user='root', passwd='csdbphylo334', db='darwintree', port=3306)
+    conn_mysql = MySQLdb.connect(host='xx.xx.xx.xx', user='xxxx', passwd='xxxx', db='xxxx', port=3306)
     conn_mongo = pymongo.Connection(host, port)
 
     read_update(srcfile)
